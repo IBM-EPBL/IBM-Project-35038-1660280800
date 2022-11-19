@@ -1,0 +1,805 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "240ba219",
+   "metadata": {},
+   "source": [
+    "# Inserting necessary libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "1880001b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\user\\anaconda3\\lib\\site-packages\\scipy\\__init__.py:146: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.23.4\n",
+      "  warnings.warn(f\"A NumPy version >={np_minversion} and <{np_maxversion}\"\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np#used for numerical analysis\n",
+    "import tensorflow #open source used for both ML and DL for computation\n",
+    "from tensorflow.keras.models import Sequential #it is a plain stack of layers\n",
+    "from tensorflow.keras import layers #A layer consists of a tensor-in tensor-out computation function\n",
+    "#Dense layer is the regular deeply connected neural network layer\n",
+    "from tensorflow.keras.layers import Dense,Flatten\n",
+    "#Faltten-used fot flattening the input or change the dimension\n",
+    "from tensorflow.keras.layers import Conv2D,MaxPooling2D #Convolutional layer\n",
+    "#MaxPooling2D-for downsampling the image\n",
+    "from keras.preprocessing.image import ImageDataGenerator"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "4de4433a",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'2.10.0'"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tensorflow.__version__"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "9266ab12",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'2.10.0'"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tensorflow.keras.__version__"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8755ebc6",
+   "metadata": {},
+   "source": [
+    "# Image Data Augumentation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "2849cdf2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#setting parameter for Image Data agumentation to the training data\n",
+    "train_datagen = ImageDataGenerator(rescale=1./255,shear_range=0.2,zoom_range=0.2,horizontal_flip=True)\n",
+    "#Image Data agumentation to the testing data\n",
+    "test_datagen=ImageDataGenerator(rescale=1./255)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "30cc8750",
+   "metadata": {},
+   "source": [
+    "# Loading our data and performing Data Augumentation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "7504ebdc",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Found 742 images belonging to 4 classes.\n",
+      "Found 198 images belonging to 4 classes.\n"
+     ]
+    }
+   ],
+   "source": [
+    "#performing data agumentation to train data\n",
+    "x_train = train_datagen.flow_from_directory(r'D:\\Documents\\ibm\\dataset\\dataset\\train_set',target_size=(64, 64),batch_size=5,\n",
+    "                                            color_mode='rgb',class_mode='categorical')\n",
+    "#performing data agumentation to test data\n",
+    "x_test = test_datagen.flow_from_directory(r'D:\\Documents\\ibm\\dataset\\dataset\\test_set',target_size=(64, 64),batch_size=5,\n",
+    "                                            color_mode='rgb',class_mode='categorical')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "23e9b190",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{'Cyclone': 0, 'Earthquake': 1, 'Flood': 2, 'Wildfire': 3}\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(x_train.class_indices)#checking the number of classes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "c5d1bb8a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{'Cyclone': 0, 'Earthquake': 1, 'Flood': 2, 'Wildfire': 3}\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(x_test.class_indices)#checking the number of classes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "04edbb32",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Counter({0: 220, 1: 156, 2: 198, 3: 168})"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from collections import Counter as c\n",
+    "c(x_train .labels)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b844dc41",
+   "metadata": {},
+   "source": [
+    "# Creating the Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "f26121f6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initializing the CNN\n",
+    "classifier = Sequential()\n",
+    "\n",
+    "# First convolution layer and poolingo\n",
+    "classifier.add(Conv2D(32, (3, 3), input_shape=(64, 64, 3), activation='relu'))\n",
+    "classifier.add(MaxPooling2D(pool_size=(2, 2)))\n",
+    "classifier.add(Conv2D(32, (3, 3), input_shape=(64, 64, 3), activation='relu'))\n",
+    "# Second convolution layer and pooling\n",
+    "classifier.add(Conv2D(32, (3, 3), activation='relu'))\n",
+    "# input_shape is going to be the pooled feature maps from the previous convolution layer\n",
+    "classifier.add(MaxPooling2D(pool_size=(2, 2)))\n",
+    "classifier.add(Conv2D(32, (3, 3), input_shape=(64, 64, 3), activation='relu'))\n",
+    "\n",
+    "# Flattening the layers\n",
+    "classifier.add(Flatten())\n",
+    "\n",
+    "# Adding a fully connected layer\n",
+    "classifier.add(Dense(units=128, activation='relu'))\n",
+    "classifier.add(Dense(units=4, activation='softmax')) # softmax for more than 2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "a68921cc",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Model: \"sequential\"\n",
+      "_________________________________________________________________\n",
+      " Layer (type)                Output Shape              Param #   \n",
+      "=================================================================\n",
+      " conv2d (Conv2D)             (None, 62, 62, 32)        896       \n",
+      "                                                                 \n",
+      " max_pooling2d (MaxPooling2D  (None, 31, 31, 32)       0         \n",
+      " )                                                               \n",
+      "                                                                 \n",
+      " conv2d_1 (Conv2D)           (None, 29, 29, 32)        9248      \n",
+      "                                                                 \n",
+      " conv2d_2 (Conv2D)           (None, 27, 27, 32)        9248      \n",
+      "                                                                 \n",
+      " max_pooling2d_1 (MaxPooling  (None, 13, 13, 32)       0         \n",
+      " 2D)                                                             \n",
+      "                                                                 \n",
+      " conv2d_3 (Conv2D)           (None, 11, 11, 32)        9248      \n",
+      "                                                                 \n",
+      " flatten (Flatten)           (None, 3872)              0         \n",
+      "                                                                 \n",
+      " dense (Dense)               (None, 128)               495744    \n",
+      "                                                                 \n",
+      " dense_1 (Dense)             (None, 4)                 516       \n",
+      "                                                                 \n",
+      "=================================================================\n",
+      "Total params: 524,900\n",
+      "Trainable params: 524,900\n",
+      "Non-trainable params: 0\n",
+      "_________________________________________________________________\n"
+     ]
+    }
+   ],
+   "source": [
+    "classifier.summary()#summary of our model"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "19c3e5d7",
+   "metadata": {},
+   "source": [
+    "# Compiling the Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "02810f3e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Compiling the CNN\n",
+    "# categorical_crossentropy for more than 2\n",
+    "classifier.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5d86c2c1",
+   "metadata": {},
+   "source": [
+    "# Fitting the Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "08aef824",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\user\\AppData\\Local\\Temp\\ipykernel_10796\\577821693.py:1: UserWarning: `Model.fit_generator` is deprecated and will be removed in a future version. Please use `Model.fit`, which supports generators.\n",
+      "  classifier.fit_generator(\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/70\n",
+      "149/149 [==============================] - 68s 441ms/step - loss: 1.2779 - accuracy: 0.3814 - val_loss: 1.3627 - val_accuracy: 0.5505\n",
+      "Epoch 2/70\n",
+      "149/149 [==============================] - 31s 207ms/step - loss: 1.1393 - accuracy: 0.4946 - val_loss: 1.1696 - val_accuracy: 0.5606\n",
+      "Epoch 3/70\n",
+      "149/149 [==============================] - 30s 202ms/step - loss: 0.9973 - accuracy: 0.5741 - val_loss: 1.2585 - val_accuracy: 0.4798\n",
+      "Epoch 4/70\n",
+      "149/149 [==============================] - 30s 198ms/step - loss: 0.9846 - accuracy: 0.5957 - val_loss: 1.1430 - val_accuracy: 0.5051\n",
+      "Epoch 5/70\n",
+      "149/149 [==============================] - 31s 206ms/step - loss: 0.8496 - accuracy: 0.6294 - val_loss: 0.9500 - val_accuracy: 0.6313\n",
+      "Epoch 6/70\n",
+      "149/149 [==============================] - 32s 213ms/step - loss: 0.7661 - accuracy: 0.6833 - val_loss: 0.8860 - val_accuracy: 0.6667\n",
+      "Epoch 7/70\n",
+      "149/149 [==============================] - 31s 211ms/step - loss: 0.7006 - accuracy: 0.7022 - val_loss: 0.8378 - val_accuracy: 0.7222\n",
+      "Epoch 8/70\n",
+      "149/149 [==============================] - 28s 185ms/step - loss: 0.6423 - accuracy: 0.7278 - val_loss: 1.3482 - val_accuracy: 0.5354\n",
+      "Epoch 9/70\n",
+      "149/149 [==============================] - 28s 187ms/step - loss: 0.5814 - accuracy: 0.7763 - val_loss: 0.7513 - val_accuracy: 0.7172\n",
+      "Epoch 10/70\n",
+      "149/149 [==============================] - 28s 186ms/step - loss: 0.5390 - accuracy: 0.7925 - val_loss: 1.0732 - val_accuracy: 0.6212\n",
+      "Epoch 11/70\n",
+      "149/149 [==============================] - 36s 239ms/step - loss: 0.4836 - accuracy: 0.8046 - val_loss: 1.0699 - val_accuracy: 0.7273\n",
+      "Epoch 12/70\n",
+      "149/149 [==============================] - 40s 267ms/step - loss: 0.4681 - accuracy: 0.8248 - val_loss: 1.4089 - val_accuracy: 0.6162\n",
+      "Epoch 13/70\n",
+      "149/149 [==============================] - 57s 384ms/step - loss: 0.4100 - accuracy: 0.8450 - val_loss: 1.2531 - val_accuracy: 0.6768\n",
+      "Epoch 14/70\n",
+      "149/149 [==============================] - 55s 366ms/step - loss: 0.4428 - accuracy: 0.8181 - val_loss: 0.9297 - val_accuracy: 0.7576\n",
+      "Epoch 15/70\n",
+      "149/149 [==============================] - 55s 374ms/step - loss: 0.3706 - accuracy: 0.8464 - val_loss: 1.1021 - val_accuracy: 0.6818\n",
+      "Epoch 16/70\n",
+      "149/149 [==============================] - 54s 361ms/step - loss: 0.3321 - accuracy: 0.8625 - val_loss: 1.0442 - val_accuracy: 0.7222\n",
+      "Epoch 17/70\n",
+      "149/149 [==============================] - 60s 403ms/step - loss: 0.2824 - accuracy: 0.8908 - val_loss: 0.9551 - val_accuracy: 0.7424\n",
+      "Epoch 18/70\n",
+      "149/149 [==============================] - 63s 427ms/step - loss: 0.2624 - accuracy: 0.9070 - val_loss: 1.1152 - val_accuracy: 0.7323\n",
+      "Epoch 19/70\n",
+      "149/149 [==============================] - 56s 380ms/step - loss: 0.3217 - accuracy: 0.8679 - val_loss: 1.1702 - val_accuracy: 0.7374\n",
+      "Epoch 20/70\n",
+      "149/149 [==============================] - 66s 444ms/step - loss: 0.2901 - accuracy: 0.8908 - val_loss: 1.1521 - val_accuracy: 0.7475\n",
+      "Epoch 21/70\n",
+      "149/149 [==============================] - 65s 435ms/step - loss: 0.2314 - accuracy: 0.9137 - val_loss: 0.9596 - val_accuracy: 0.7475\n",
+      "Epoch 22/70\n",
+      "149/149 [==============================] - 60s 407ms/step - loss: 0.2151 - accuracy: 0.9164 - val_loss: 1.2071 - val_accuracy: 0.7121\n",
+      "Epoch 23/70\n",
+      "149/149 [==============================] - 56s 379ms/step - loss: 0.2558 - accuracy: 0.9070 - val_loss: 1.2376 - val_accuracy: 0.7172\n",
+      "Epoch 24/70\n",
+      "149/149 [==============================] - 54s 364ms/step - loss: 0.2277 - accuracy: 0.9205 - val_loss: 1.4716 - val_accuracy: 0.7525\n",
+      "Epoch 25/70\n",
+      "149/149 [==============================] - 58s 385ms/step - loss: 0.2352 - accuracy: 0.9124 - val_loss: 1.6545 - val_accuracy: 0.7172\n",
+      "Epoch 26/70\n",
+      "149/149 [==============================] - 56s 379ms/step - loss: 0.1934 - accuracy: 0.9353 - val_loss: 1.1940 - val_accuracy: 0.7677\n",
+      "Epoch 27/70\n",
+      "149/149 [==============================] - 61s 406ms/step - loss: 0.1508 - accuracy: 0.9461 - val_loss: 1.3190 - val_accuracy: 0.7172\n",
+      "Epoch 28/70\n",
+      "149/149 [==============================] - 61s 410ms/step - loss: 0.1363 - accuracy: 0.9555 - val_loss: 1.6858 - val_accuracy: 0.7323\n",
+      "Epoch 29/70\n",
+      "149/149 [==============================] - 60s 404ms/step - loss: 0.1176 - accuracy: 0.9515 - val_loss: 1.7736 - val_accuracy: 0.7626\n",
+      "Epoch 30/70\n",
+      "149/149 [==============================] - 61s 410ms/step - loss: 0.1141 - accuracy: 0.9636 - val_loss: 1.4142 - val_accuracy: 0.7879\n",
+      "Epoch 31/70\n",
+      "149/149 [==============================] - 58s 388ms/step - loss: 0.1511 - accuracy: 0.9407 - val_loss: 1.3390 - val_accuracy: 0.7828\n",
+      "Epoch 32/70\n",
+      "149/149 [==============================] - 60s 404ms/step - loss: 0.1386 - accuracy: 0.9488 - val_loss: 2.1669 - val_accuracy: 0.6818\n",
+      "Epoch 33/70\n",
+      "149/149 [==============================] - 60s 405ms/step - loss: 0.1143 - accuracy: 0.9663 - val_loss: 1.4481 - val_accuracy: 0.7828\n",
+      "Epoch 34/70\n",
+      "149/149 [==============================] - 56s 378ms/step - loss: 0.1017 - accuracy: 0.9609 - val_loss: 1.7716 - val_accuracy: 0.7374\n",
+      "Epoch 35/70\n",
+      "149/149 [==============================] - 55s 367ms/step - loss: 0.0697 - accuracy: 0.9757 - val_loss: 2.0252 - val_accuracy: 0.7374\n",
+      "Epoch 36/70\n",
+      "149/149 [==============================] - 58s 389ms/step - loss: 0.1426 - accuracy: 0.9474 - val_loss: 1.4871 - val_accuracy: 0.7172\n",
+      "Epoch 37/70\n",
+      "149/149 [==============================] - 56s 374ms/step - loss: 0.1582 - accuracy: 0.9569 - val_loss: 1.7144 - val_accuracy: 0.7071\n",
+      "Epoch 38/70\n",
+      "149/149 [==============================] - 56s 374ms/step - loss: 0.1231 - accuracy: 0.9582 - val_loss: 2.0896 - val_accuracy: 0.7374\n",
+      "Epoch 39/70\n",
+      "149/149 [==============================] - 56s 379ms/step - loss: 0.1452 - accuracy: 0.9501 - val_loss: 1.8662 - val_accuracy: 0.7222\n",
+      "Epoch 40/70\n",
+      "149/149 [==============================] - 58s 392ms/step - loss: 0.1563 - accuracy: 0.9501 - val_loss: 1.4481 - val_accuracy: 0.7626\n",
+      "Epoch 41/70\n",
+      "149/149 [==============================] - 57s 378ms/step - loss: 0.1090 - accuracy: 0.9650 - val_loss: 1.5310 - val_accuracy: 0.7677\n",
+      "Epoch 42/70\n",
+      "149/149 [==============================] - 55s 368ms/step - loss: 0.0733 - accuracy: 0.9730 - val_loss: 1.5796 - val_accuracy: 0.7778\n",
+      "Epoch 43/70\n",
+      "149/149 [==============================] - 58s 388ms/step - loss: 0.1600 - accuracy: 0.9447 - val_loss: 2.0835 - val_accuracy: 0.6970\n",
+      "Epoch 44/70\n",
+      "149/149 [==============================] - 58s 391ms/step - loss: 0.0665 - accuracy: 0.9798 - val_loss: 2.0281 - val_accuracy: 0.7475\n",
+      "Epoch 45/70\n",
+      "149/149 [==============================] - 56s 378ms/step - loss: 0.0274 - accuracy: 0.9919 - val_loss: 1.7587 - val_accuracy: 0.7727\n",
+      "Epoch 46/70\n",
+      "149/149 [==============================] - 58s 393ms/step - loss: 0.1085 - accuracy: 0.9704 - val_loss: 2.1997 - val_accuracy: 0.7475\n",
+      "Epoch 47/70\n",
+      "149/149 [==============================] - 56s 374ms/step - loss: 0.1470 - accuracy: 0.9542 - val_loss: 1.5245 - val_accuracy: 0.7879\n",
+      "Epoch 48/70\n",
+      "149/149 [==============================] - 55s 369ms/step - loss: 0.0534 - accuracy: 0.9838 - val_loss: 1.5620 - val_accuracy: 0.7929\n",
+      "Epoch 49/70\n",
+      "149/149 [==============================] - 56s 374ms/step - loss: 0.1037 - accuracy: 0.9623 - val_loss: 1.7497 - val_accuracy: 0.7374\n",
+      "Epoch 50/70\n",
+      "149/149 [==============================] - 53s 357ms/step - loss: 0.0506 - accuracy: 0.9798 - val_loss: 1.9007 - val_accuracy: 0.7374\n",
+      "Epoch 51/70\n",
+      "149/149 [==============================] - 56s 378ms/step - loss: 0.0446 - accuracy: 0.9811 - val_loss: 1.5864 - val_accuracy: 0.7727\n",
+      "Epoch 52/70\n",
+      "149/149 [==============================] - 54s 363ms/step - loss: 0.0361 - accuracy: 0.9865 - val_loss: 2.0025 - val_accuracy: 0.7576\n",
+      "Epoch 53/70\n",
+      "149/149 [==============================] - 53s 356ms/step - loss: 0.0356 - accuracy: 0.9919 - val_loss: 2.7427 - val_accuracy: 0.7273\n",
+      "Epoch 54/70\n",
+      "149/149 [==============================] - 55s 369ms/step - loss: 0.0357 - accuracy: 0.9852 - val_loss: 2.5705 - val_accuracy: 0.7020\n",
+      "Epoch 55/70\n",
+      "149/149 [==============================] - 58s 387ms/step - loss: 0.0748 - accuracy: 0.9717 - val_loss: 2.5404 - val_accuracy: 0.6970\n",
+      "Epoch 56/70\n",
+      "149/149 [==============================] - 57s 383ms/step - loss: 0.0969 - accuracy: 0.9636 - val_loss: 2.1211 - val_accuracy: 0.7576\n",
+      "Epoch 57/70\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "149/149 [==============================] - 62s 415ms/step - loss: 0.1207 - accuracy: 0.9582 - val_loss: 1.8015 - val_accuracy: 0.7323\n",
+      "Epoch 58/70\n",
+      "149/149 [==============================] - 58s 388ms/step - loss: 0.0468 - accuracy: 0.9879 - val_loss: 1.8959 - val_accuracy: 0.7677\n",
+      "Epoch 59/70\n",
+      "149/149 [==============================] - 59s 396ms/step - loss: 0.0733 - accuracy: 0.9730 - val_loss: 2.8380 - val_accuracy: 0.7071\n",
+      "Epoch 60/70\n",
+      "149/149 [==============================] - 58s 390ms/step - loss: 0.1488 - accuracy: 0.9569 - val_loss: 2.6232 - val_accuracy: 0.7071\n",
+      "Epoch 61/70\n",
+      "149/149 [==============================] - 59s 396ms/step - loss: 0.0683 - accuracy: 0.9730 - val_loss: 1.7354 - val_accuracy: 0.7626\n",
+      "Epoch 62/70\n",
+      "149/149 [==============================] - 59s 399ms/step - loss: 0.1419 - accuracy: 0.9609 - val_loss: 2.8126 - val_accuracy: 0.6919\n",
+      "Epoch 63/70\n",
+      "149/149 [==============================] - 59s 391ms/step - loss: 0.0632 - accuracy: 0.9784 - val_loss: 2.0048 - val_accuracy: 0.7525\n",
+      "Epoch 64/70\n",
+      "149/149 [==============================] - 58s 392ms/step - loss: 0.0139 - accuracy: 0.9960 - val_loss: 2.2043 - val_accuracy: 0.7626\n",
+      "Epoch 65/70\n",
+      "149/149 [==============================] - 60s 402ms/step - loss: 0.0097 - accuracy: 0.9973 - val_loss: 2.1398 - val_accuracy: 0.7727\n",
+      "Epoch 66/70\n",
+      "149/149 [==============================] - 61s 406ms/step - loss: 0.0113 - accuracy: 0.9987 - val_loss: 2.5320 - val_accuracy: 0.7828\n",
+      "Epoch 67/70\n",
+      "149/149 [==============================] - 59s 398ms/step - loss: 0.1023 - accuracy: 0.9623 - val_loss: 2.1452 - val_accuracy: 0.7677\n",
+      "Epoch 68/70\n",
+      "149/149 [==============================] - 56s 374ms/step - loss: 0.0577 - accuracy: 0.9825 - val_loss: 2.0024 - val_accuracy: 0.7626\n",
+      "Epoch 69/70\n",
+      "149/149 [==============================] - 58s 391ms/step - loss: 0.0239 - accuracy: 0.9946 - val_loss: 2.1929 - val_accuracy: 0.7677\n",
+      "Epoch 70/70\n",
+      "149/149 [==============================] - 58s 391ms/step - loss: 0.0454 - accuracy: 0.9852 - val_loss: 2.2006 - val_accuracy: 0.7626\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x11569ce0430>"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "classifier.fit_generator(\n",
+    "        generator=x_train,steps_per_epoch = len(x_train),\n",
+    "        epochs=70, validation_data=x_test,validation_steps = len(x_test))# No of images in test set"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b7165784",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "00fa516f",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "id": "19bda4e4",
+   "metadata": {},
+   "source": [
+    "# Saving the Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "fbb50055",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save the model\n",
+    "classifier.save('disaster.h5')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "6f925f86",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model_json = classifier.to_json()\n",
+    "with open(\"model-bw.json\", \"w\") as json_file:\n",
+    "    json_file.write(model_json)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "60affc33",
+   "metadata": {},
+   "source": [
+    "# Predicting Results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "f05b455b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from tensorflow.keras.models import load_model\n",
+    "from keras.preprocessing import image\n",
+    "model = load_model(\"disaster.h5\") #loading the model for testing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "2770305b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\user\\anaconda3\\lib\\site-packages\\tensorflow\\python\\keras\\engine\\sequential.py:455: UserWarning: `model.predict_classes()` is deprecated and will be removed after 2021-01-01. Please use instead:* `np.argmax(model.predict(x), axis=-1)`,   if your model does multi-class classification   (e.g. if it uses a `softmax` last-layer activation).* `(model.predict(x) > 0.5).astype(\"int32\")`,   if your model does binary classification   (e.g. if it uses a `sigmoid` last-layer activation).\n",
+      "  warnings.warn('`model.predict_classes()` is deprecated and '\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([0], dtype=int64)"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "img = image.load_img(r\"D:\\Documents\\ibm\\dataset\\dataset\\test_set\\Cyclone\\867.jpg\",grayscale=False,\n",
+    "                          target_size= (64,64))#loading of the image\\n\n",
+    "x = image.img_to_array(img)#image to array\\n\",\n",
+    "x = np.expand_dims(x,axis = 0)#changing the shape\\n\",\n",
+    "pred = model.predict_classes(x)#predicting the classes\\n\",\n",
+    "pred"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "c1d885cc",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'Cyclone'"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "index=['Cyclone','Earthquake','Flood','Wildfire']\n",
+    "result=str(index[pred[0]])\n",
+    "result"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "f77d2631",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Collecting jupyterthemes\n",
+      "  Using cached jupyterthemes-0.20.0-py2.py3-none-any.whl (7.0 MB)\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "ERROR: Could not find a version that satisfies the requirement as (from versions: none)\n",
+      "ERROR: No matching distribution found for as\n"
+     ]
+    }
+   ],
+   "source": [
+    "!pip install jupyterthemes as jt"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "b84e2478",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "'jt' is not recognized as an internal or external command,\n",
+      "operable program or batch file.\n"
+     ]
+    }
+   ],
+   "source": [
+    "!jt -t monokai"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "01f4196f",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d8a5e248",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# %load C:\\Users\\user\\Desktop\\IBM\\Flask\\app.py\n",
+    "\"\"\"\n",
+    "Created on Sat Oct 24 00:48:19 2020\n",
+    "\n",
+    "@author: Tulasi\n",
+    "\"\"\"\n",
+    "\n",
+    "\n",
+    "# USAGE\n",
+    "\n",
+    "# import the necessary packages\n",
+    "from flask import Flask,render_template,request\n",
+    "# Flask-It is our framework which we are going to use to run/serve our application.\n",
+    "#request-for accessing file which was uploaded by the user on our application.\n",
+    "#import operator\n",
+    "import cv2 # opencv library\n",
+    "from tensorflow.keras.models import load_model#to load our trained model\n",
+    "import numpy as np\n",
+    "#import os\n",
+    "from werkzeug.utils import secure_filename\n",
+    "#from playsound import playsound\n",
+    "#from gtts import gTTS\n",
+    "'''\n",
+    "def playaudio(text):\n",
+    "    speech=gTTS(text)\n",
+    "    print(type(speech))\n",
+    "    speech.save(\"output1.mp3\")\n",
+    "    playsound(\"output1.mp3\")\n",
+    "    return\n",
+    "'''\n",
+    "app = Flask(__name__,template_folder=\"templates\") # initializing a flask app\n",
+    "# Loading the model\n",
+    "model=load_model(r'C:\\Users\\user\\Desktop\\IBM\\Flask\\templates\\disaster.h5')\n",
+    "print(\"Loaded model from disk\")\n",
+    "\n",
+    "app=Flask(__name__,template_folder=\"templates\") \n",
+    "@app.route('/', methods=['GET'])\n",
+    "def index():\n",
+    "    return render_template('home.html')\n",
+    "@app.route('/home', methods=['GET'])\n",
+    "def home():\n",
+    "    return render_template('home.html')\n",
+    "@app.route('/intro', methods=['GET'])\n",
+    "def about():\n",
+    "    return render_template('intro.html')\n",
+    "@app.route('/upload', methods=['GET', 'POST'])\n",
+    "def predict():\n",
+    "            \n",
+    "        # Get a reference to webcam #0 (the default one)\n",
+    "        \n",
+    "        print(\"[INFO] starting video stream...\")\n",
+    "        vs = cv2.VideoCapture(0)\n",
+    "        #writer = None\n",
+    "        (W, H) = (None, None)\n",
+    " \n",
+    "# loop over frames from the video file stream\n",
+    "        while True:\n",
+    "        \t# read the next frame from the file\n",
+    "            (grabbed, frame) = vs.read()\n",
+    "         \n",
+    "        \t# if the frame was not grabbed, then we have reached the end\n",
+    "        \t# of the stream\n",
+    "            if not grabbed:\n",
+    "                break\n",
+    "         \n",
+    "        \t# if the frame dimensions are empty, grab them\n",
+    "            if W is None or H is None:\n",
+    "                (H, W) = frame.shape[:2]\n",
+    "        \n",
+    "        \t# clone the output frame, then convert it from BGR to RGB\n",
+    "        \t# ordering and resize the frame to a fixed 64x64\n",
+    "            output = frame.copy()\n",
+    "            #print(\"apple\")\n",
+    "            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\n",
+    "            frame = cv2.resize(frame, (64, 64))\n",
+    "            #frame = frame.astype(\"float32\")\n",
+    "            x=np.expand_dims(frame, axis=0)\n",
+    "            result = np.argmax(model.predict(x), axis=-1)\n",
+    "            index=['Cyclone','Earthquake','Flood','Wildfire']\n",
+    "            result=str(index[result[0]])\n",
+    "            #print(result)\n",
+    "            #result=result.tolist()\n",
+    "            \n",
+    "            cv2.putText(output, \"activity: {}\".format(result), (10, 120), cv2.FONT_HERSHEY_PLAIN,\n",
+    "                        1, (0,255,255), 1)\n",
+    "            #playaudio(\"Emergency it is a disaster\")\n",
+    "            cv2.imshow(\"Output\", output)\n",
+    "            key = cv2.waitKey(1) & 0xFF\n",
+    "        \t \n",
+    "        \t\t# if the `q` key was pressed, break from the loop\n",
+    "            if key == ord(\"q\"):\n",
+    "                break\n",
+    "         \n",
+    "        # release the file pointers\n",
+    "        print(\"[INFO] cleaning up...\")\n",
+    "        vs.release()\n",
+    "        cv2.destroyAllWindows()\n",
+    "        return render_template(\"upload.html\")\n",
+    "\n",
+    "    \n",
+    "if __name__ == '__main__':\n",
+    "      app.run(debug=False,threaded=True)\n",
+    " "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6f99ba2b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
