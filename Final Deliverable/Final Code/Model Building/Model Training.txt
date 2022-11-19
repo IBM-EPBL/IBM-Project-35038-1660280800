@@ -1,0 +1,1091 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Inserting necessary libraries\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "XojQR_AkxBKA"
+      }
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "kIuqOC89vJPW",
+        "outputId": "5e565205-551b-4198-ada6-6b246a72c789"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Drive already mounted at /content/drive; to attempt to forcibly remount, call drive.mount(\"/content/drive\", force_remount=True).\n"
+          ]
+        }
+      ],
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np#used for numerical analysis\n",
+        "import tensorflow #open source used for both ML and DL for computation\n",
+        "from tensorflow.keras.models import Sequential #it is a plain stack of layers\n",
+        "from tensorflow.keras import layers #A layer consists of a tensor-in tensor-out computation function\n",
+        "#Dense layer is the regular deeply connected neural network layer\n",
+        "from tensorflow.keras.layers import Dense,Flatten\n",
+        "#Faltten-used fot flattening the input or change the dimension\n",
+        "from tensorflow.keras.layers import Conv2D,MaxPooling2D #Convolutional layer\n",
+        "#MaxPooling2D-for downsampling the image\n",
+        "from keras.preprocessing.image import ImageDataGenerator"
+      ],
+      "metadata": {
+        "id": "WpPhH9BGwkQS"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "tensorflow.__version__"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 36
+        },
+        "id": "mB4JEieYwmy8",
+        "outputId": "8e14d8e5-535a-4424-cb4e-92126f26a43a"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'2.9.2'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 4
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "tensorflow.keras.__version__"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 36
+        },
+        "id": "JXHAgY7Tw6l3",
+        "outputId": "423b5cae-3373-45d9-c9a8-6c89799b6f0d"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'2.9.0'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 5
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Image Data Augumentation"
+      ],
+      "metadata": {
+        "id": "-C6Lr2tKxT-Q"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#setting parameter for Image Data agumentation to the training data\n",
+        "train_datagen = ImageDataGenerator(rescale=1./255,shear_range=0.2,zoom_range=0.2,horizontal_flip=True)\n",
+        "#Image Data agumentation to the testing data\n",
+        "test_datagen=ImageDataGenerator(rescale=1./255)"
+      ],
+      "metadata": {
+        "id": "85SQG-aLxDu8"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Loading our data and performing Data Augumentation"
+      ],
+      "metadata": {
+        "id": "7X_swlrQxVbo"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#performing data agumentation to train data\n",
+        "x_train = train_datagen.flow_from_directory(r'/content/drive/MyDrive/dataset/train_set',target_size=(64, 64),batch_size=24,\n",
+        "                                            color_mode='rgb',class_mode='categorical')\n",
+        "#performing data agumentation to test data\n",
+        "x_test = test_datagen.flow_from_directory(r'/content/drive/MyDrive/dataset/test_set',target_size=(64, 64),batch_size=24,\n",
+        "                                            color_mode='rgb',class_mode='categorical')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Ut94MpjIxU2i",
+        "outputId": "f749474e-b847-4ac8-ae22-0da1e8864382"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Found 742 images belonging to 4 classes.\n",
+            "Found 198 images belonging to 4 classes.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(x_train.class_indices)#checking the number of classes"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "4nz11MIFxqcc",
+        "outputId": "c6cb906c-e081-42b2-f715-473095211365"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "{'Cyclone': 0, 'Earthquake': 1, 'Flood': 2, 'Wildfire': 3}\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(x_test.class_indices)#checking the number of classes"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "mr_UjMaKxw4F",
+        "outputId": "eb9c96ed-d917-4776-b757-13b9913c5f58"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "{'Cyclone': 0, 'Earthquake': 1, 'Flood': 2, 'Wildfire': 3}\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from collections import Counter as c\n",
+        "c(x_train .labels)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "kx6LXWRVx2Op",
+        "outputId": "efb30fad-3ff9-401a-8a5b-fff47af88474"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "Counter({0: 220, 1: 156, 2: 198, 3: 168})"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 10
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Creating the Model"
+      ],
+      "metadata": {
+        "id": "OH7GUl41x6ZX"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Initializing the CNN\n",
+        "classifier = Sequential()\n",
+        "\n",
+        "# First convolution layer and poolingo\n",
+        "classifier.add(Conv2D(32, (3, 3), input_shape=(64, 64, 3), activation='relu'))\n",
+        "classifier.add(MaxPooling2D(pool_size=(2, 2)))\n",
+        "classifier.add(Conv2D(32, (3, 3), input_shape=(64, 64, 3), activation='relu'))\n",
+        "# Second convolution layer and pooling\n",
+        "classifier.add(Conv2D(32, (3, 3), activation='relu'))\n",
+        "# input_shape is going to be the pooled feature maps from the previous convolution layer\n",
+        "classifier.add(MaxPooling2D(pool_size=(2, 2)))\n",
+        "classifier.add(Conv2D(32, (3, 3), input_shape=(64, 64, 3), activation='relu'))\n",
+        "\n",
+        "# Flattening the layers\n",
+        "classifier.add(Flatten())\n",
+        "\n",
+        "# Adding a fully connected layer\n",
+        "classifier.add(Dense(units=128, activation='relu'))\n",
+        "classifier.add(Dense(units=4, activation='softmax')) # softmax for more than 2"
+      ],
+      "metadata": {
+        "id": "gUOHKWBqx78x"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "classifier.summary()#summary of our model"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ztFXZ9E1yD4v",
+        "outputId": "e6644458-520e-4f1d-bce1-08d93cf2bef6"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Model: \"sequential\"\n",
+            "_________________________________________________________________\n",
+            " Layer (type)                Output Shape              Param #   \n",
+            "=================================================================\n",
+            " conv2d (Conv2D)             (None, 62, 62, 32)        896       \n",
+            "                                                                 \n",
+            " max_pooling2d (MaxPooling2D  (None, 31, 31, 32)       0         \n",
+            " )                                                               \n",
+            "                                                                 \n",
+            " conv2d_1 (Conv2D)           (None, 29, 29, 32)        9248      \n",
+            "                                                                 \n",
+            " conv2d_2 (Conv2D)           (None, 27, 27, 32)        9248      \n",
+            "                                                                 \n",
+            " max_pooling2d_1 (MaxPooling  (None, 13, 13, 32)       0         \n",
+            " 2D)                                                             \n",
+            "                                                                 \n",
+            " conv2d_3 (Conv2D)           (None, 11, 11, 32)        9248      \n",
+            "                                                                 \n",
+            " flatten (Flatten)           (None, 3872)              0         \n",
+            "                                                                 \n",
+            " dense (Dense)               (None, 128)               495744    \n",
+            "                                                                 \n",
+            " dense_1 (Dense)             (None, 4)                 516       \n",
+            "                                                                 \n",
+            "=================================================================\n",
+            "Total params: 524,900\n",
+            "Trainable params: 524,900\n",
+            "Non-trainable params: 0\n",
+            "_________________________________________________________________\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Compiling the Model"
+      ],
+      "metadata": {
+        "id": "WVqpLQxeyIPS"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Compiling the CNN\n",
+        "# categorical_crossentropy for more than 2\n",
+        "classifier.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])"
+      ],
+      "metadata": {
+        "id": "W2AVrX_RyJNW"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Fitting the Model"
+      ],
+      "metadata": {
+        "id": "jHNrxWujyPf8"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "classifier.fit_generator(\n",
+        "        generator=x_train,steps_per_epoch = len(x_train),\n",
+        "        epochs=10, validation_data=x_test,validation_steps = len(x_test))# No of images in test set"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "pJBlUTtryXEH",
+        "outputId": "7ee2d268-1906-4afd-97bc-9c13cfa6bc05"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.7/dist-packages/ipykernel_launcher.py:3: UserWarning: `Model.fit_generator` is deprecated and will be removed in a future version. Please use `Model.fit`, which supports generators.\n",
+            "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/10\n",
+            "31/31 [==============================] - 41s 1s/step - loss: 1.2733 - accuracy: 0.3706 - val_loss: 1.3401 - val_accuracy: 0.2172\n",
+            "Epoch 2/10\n",
+            "31/31 [==============================] - 41s 1s/step - loss: 1.1257 - accuracy: 0.4811 - val_loss: 1.1353 - val_accuracy: 0.5354\n",
+            "Epoch 3/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.8975 - accuracy: 0.6280 - val_loss: 1.1651 - val_accuracy: 0.4747\n",
+            "Epoch 4/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.7673 - accuracy: 0.6914 - val_loss: 0.9801 - val_accuracy: 0.6869\n",
+            "Epoch 5/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.6464 - accuracy: 0.7493 - val_loss: 0.8208 - val_accuracy: 0.7121\n",
+            "Epoch 6/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.6411 - accuracy: 0.7547 - val_loss: 0.8856 - val_accuracy: 0.6515\n",
+            "Epoch 7/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.5887 - accuracy: 0.7871 - val_loss: 0.7549 - val_accuracy: 0.7424\n",
+            "Epoch 8/10\n",
+            "31/31 [==============================] - 41s 1s/step - loss: 0.5216 - accuracy: 0.7911 - val_loss: 0.7451 - val_accuracy: 0.7424\n",
+            "Epoch 9/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.5222 - accuracy: 0.8073 - val_loss: 0.7091 - val_accuracy: 0.7879\n",
+            "Epoch 10/10\n",
+            "31/31 [==============================] - 39s 1s/step - loss: 0.5434 - accuracy: 0.7911 - val_loss: 0.8076 - val_accuracy: 0.7222\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "<keras.callbacks.History at 0x7faeccd0ff50>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 14
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Saving the Model"
+      ],
+      "metadata": {
+        "id": "M9n_9m8_0kAS"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Save the model\n",
+        "classifier.save('disaster.h5')"
+      ],
+      "metadata": {
+        "id": "obVgBDmh0lU7"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!tar -zcvf disaster-classification.tgz disaster.h5"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "gW5RVFUb0p19",
+        "outputId": "50f5ff08-a5be-4e6d-c90c-d445289040f9"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "disaster.h5\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "IBM Deployment"
+      ],
+      "metadata": {
+        "id": "hOwr7CDe17we"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install watson-machine-learning-client"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        },
+        "id": "HDP0dufB18n-",
+        "outputId": "9c57d4b6-0bcd-45a1-d9e1-2c77744824b9"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Collecting watson-machine-learning-client\n",
+            "  Downloading watson_machine_learning_client-1.0.391-py3-none-any.whl (538 kB)\n",
+            "\u001b[K     |████████████████████████████████| 538 kB 4.8 MB/s \n",
+            "\u001b[?25hCollecting boto3\n",
+            "  Downloading boto3-1.26.6-py3-none-any.whl (132 kB)\n",
+            "\u001b[K     |████████████████████████████████| 132 kB 67.1 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: tqdm in /usr/local/lib/python3.7/dist-packages (from watson-machine-learning-client) (4.64.1)\n",
+            "Requirement already satisfied: certifi in /usr/local/lib/python3.7/dist-packages (from watson-machine-learning-client) (2022.9.24)\n",
+            "Requirement already satisfied: requests in /usr/local/lib/python3.7/dist-packages (from watson-machine-learning-client) (2.23.0)\n",
+            "Collecting ibm-cos-sdk\n",
+            "  Downloading ibm-cos-sdk-2.12.0.tar.gz (55 kB)\n",
+            "\u001b[K     |████████████████████████████████| 55 kB 3.6 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: urllib3 in /usr/local/lib/python3.7/dist-packages (from watson-machine-learning-client) (1.24.3)\n",
+            "Requirement already satisfied: tabulate in /usr/local/lib/python3.7/dist-packages (from watson-machine-learning-client) (0.8.10)\n",
+            "Requirement already satisfied: pandas in /usr/local/lib/python3.7/dist-packages (from watson-machine-learning-client) (1.3.5)\n",
+            "Collecting lomond\n",
+            "  Downloading lomond-0.3.3-py2.py3-none-any.whl (35 kB)\n",
+            "Collecting botocore<1.30.0,>=1.29.6\n",
+            "  Downloading botocore-1.29.6-py3-none-any.whl (9.9 MB)\n",
+            "\u001b[K     |████████████████████████████████| 9.9 MB 62.7 MB/s \n",
+            "\u001b[?25hCollecting s3transfer<0.7.0,>=0.6.0\n",
+            "  Downloading s3transfer-0.6.0-py3-none-any.whl (79 kB)\n",
+            "\u001b[K     |████████████████████████████████| 79 kB 7.1 MB/s \n",
+            "\u001b[?25hCollecting jmespath<2.0.0,>=0.7.1\n",
+            "  Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)\n",
+            "Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in /usr/local/lib/python3.7/dist-packages (from botocore<1.30.0,>=1.29.6->boto3->watson-machine-learning-client) (2.8.2)\n",
+            "Collecting urllib3\n",
+            "  Downloading urllib3-1.26.12-py2.py3-none-any.whl (140 kB)\n",
+            "\u001b[K     |████████████████████████████████| 140 kB 53.1 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: six>=1.5 in /usr/local/lib/python3.7/dist-packages (from python-dateutil<3.0.0,>=2.1->botocore<1.30.0,>=1.29.6->boto3->watson-machine-learning-client) (1.15.0)\n",
+            "Collecting ibm-cos-sdk-core==2.12.0\n",
+            "  Downloading ibm-cos-sdk-core-2.12.0.tar.gz (956 kB)\n",
+            "\u001b[K     |████████████████████████████████| 956 kB 57.5 MB/s \n",
+            "\u001b[?25hCollecting ibm-cos-sdk-s3transfer==2.12.0\n",
+            "  Downloading ibm-cos-sdk-s3transfer-2.12.0.tar.gz (135 kB)\n",
+            "\u001b[K     |████████████████████████████████| 135 kB 51.0 MB/s \n",
+            "\u001b[?25hCollecting jmespath<2.0.0,>=0.7.1\n",
+            "  Downloading jmespath-0.10.0-py2.py3-none-any.whl (24 kB)\n",
+            "Collecting requests\n",
+            "  Downloading requests-2.28.1-py3-none-any.whl (62 kB)\n",
+            "\u001b[K     |████████████████████████████████| 62 kB 1.4 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: charset-normalizer<3,>=2 in /usr/local/lib/python3.7/dist-packages (from requests->watson-machine-learning-client) (2.1.1)\n",
+            "Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.7/dist-packages (from requests->watson-machine-learning-client) (2.10)\n",
+            "Requirement already satisfied: pytz>=2017.3 in /usr/local/lib/python3.7/dist-packages (from pandas->watson-machine-learning-client) (2022.6)\n",
+            "Requirement already satisfied: numpy>=1.17.3 in /usr/local/lib/python3.7/dist-packages (from pandas->watson-machine-learning-client) (1.21.6)\n",
+            "Building wheels for collected packages: ibm-cos-sdk, ibm-cos-sdk-core, ibm-cos-sdk-s3transfer\n",
+            "  Building wheel for ibm-cos-sdk (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for ibm-cos-sdk: filename=ibm_cos_sdk-2.12.0-py3-none-any.whl size=73929 sha256=0c4f87ca37fbf8f265c46ce9bac457c809989290447c38e21e04736d1b6a158f\n",
+            "  Stored in directory: /root/.cache/pip/wheels/ec/94/29/2b57327cf00664b6614304f7958abd29d77ea0e5bbece2ea57\n",
+            "  Building wheel for ibm-cos-sdk-core (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for ibm-cos-sdk-core: filename=ibm_cos_sdk_core-2.12.0-py3-none-any.whl size=562962 sha256=11c18b94c16e200b3be1f17cc1cfec18cc3bfbcfd8e4e2c86883421c99592434\n",
+            "  Stored in directory: /root/.cache/pip/wheels/64/56/fb/5cd6f4f40406c828a5289b95b2752a4d142a9afb359244ed8d\n",
+            "  Building wheel for ibm-cos-sdk-s3transfer (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for ibm-cos-sdk-s3transfer: filename=ibm_cos_sdk_s3transfer-2.12.0-py3-none-any.whl size=89779 sha256=efadf304e27ef6ecc37bf68e1e889611aea63d4df0c998079bda3ad018f7110b\n",
+            "  Stored in directory: /root/.cache/pip/wheels/57/79/6a/ffe3370ed7ebc00604f9f76766e1e0348dcdcad2b2e32df9e1\n",
+            "Successfully built ibm-cos-sdk ibm-cos-sdk-core ibm-cos-sdk-s3transfer\n",
+            "Installing collected packages: urllib3, requests, jmespath, ibm-cos-sdk-core, botocore, s3transfer, ibm-cos-sdk-s3transfer, lomond, ibm-cos-sdk, boto3, watson-machine-learning-client\n",
+            "  Attempting uninstall: urllib3\n",
+            "    Found existing installation: urllib3 1.24.3\n",
+            "    Uninstalling urllib3-1.24.3:\n",
+            "      Successfully uninstalled urllib3-1.24.3\n",
+            "  Attempting uninstall: requests\n",
+            "    Found existing installation: requests 2.23.0\n",
+            "    Uninstalling requests-2.23.0:\n",
+            "      Successfully uninstalled requests-2.23.0\n",
+            "Successfully installed boto3-1.26.6 botocore-1.29.6 ibm-cos-sdk-2.12.0 ibm-cos-sdk-core-2.12.0 ibm-cos-sdk-s3transfer-2.12.0 jmespath-0.10.0 lomond-0.3.3 requests-2.28.1 s3transfer-0.6.0 urllib3-1.26.12 watson-machine-learning-client-1.0.391\n"
+          ]
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/vnd.colab-display-data+json": {
+              "pip_warning": {
+                "packages": [
+                  "requests",
+                  "urllib3"
+                ]
+              }
+            }
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install ibm_watson_machine_learning"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "CH6V-DXg2WoN",
+        "outputId": "a51d301f-c275-407f-9891-95976fe5e1ac"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Collecting ibm_watson_machine_learning\n",
+            "  Downloading ibm_watson_machine_learning-1.0.257-py3-none-any.whl (1.8 MB)\n",
+            "\u001b[K     |████████████████████████████████| 1.8 MB 5.1 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: tabulate in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (0.8.10)\n",
+            "Requirement already satisfied: packaging in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (21.3)\n",
+            "Collecting ibm-cos-sdk==2.7.*\n",
+            "  Downloading ibm-cos-sdk-2.7.0.tar.gz (51 kB)\n",
+            "\u001b[K     |████████████████████████████████| 51 kB 659 kB/s \n",
+            "\u001b[?25hRequirement already satisfied: urllib3 in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (1.26.12)\n",
+            "Requirement already satisfied: pandas<1.5.0,>=0.24.2 in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (1.3.5)\n",
+            "Requirement already satisfied: lomond in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (0.3.3)\n",
+            "Requirement already satisfied: certifi in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (2022.9.24)\n",
+            "Requirement already satisfied: importlib-metadata in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (4.13.0)\n",
+            "Requirement already satisfied: requests in /usr/local/lib/python3.7/dist-packages (from ibm_watson_machine_learning) (2.28.1)\n",
+            "Collecting ibm-cos-sdk-core==2.7.0\n",
+            "  Downloading ibm-cos-sdk-core-2.7.0.tar.gz (824 kB)\n",
+            "\u001b[K     |████████████████████████████████| 824 kB 49.8 MB/s \n",
+            "\u001b[?25hCollecting ibm-cos-sdk-s3transfer==2.7.0\n",
+            "  Downloading ibm-cos-sdk-s3transfer-2.7.0.tar.gz (133 kB)\n",
+            "\u001b[K     |████████████████████████████████| 133 kB 44.4 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: jmespath<1.0.0,>=0.7.1 in /usr/local/lib/python3.7/dist-packages (from ibm-cos-sdk==2.7.*->ibm_watson_machine_learning) (0.10.0)\n",
+            "Collecting docutils<0.16,>=0.10\n",
+            "  Downloading docutils-0.15.2-py3-none-any.whl (547 kB)\n",
+            "\u001b[K     |████████████████████████████████| 547 kB 64.3 MB/s \n",
+            "\u001b[?25hRequirement already satisfied: python-dateutil<3.0.0,>=2.1 in /usr/local/lib/python3.7/dist-packages (from ibm-cos-sdk-core==2.7.0->ibm-cos-sdk==2.7.*->ibm_watson_machine_learning) (2.8.2)\n",
+            "Requirement already satisfied: pytz>=2017.3 in /usr/local/lib/python3.7/dist-packages (from pandas<1.5.0,>=0.24.2->ibm_watson_machine_learning) (2022.6)\n",
+            "Requirement already satisfied: numpy>=1.17.3 in /usr/local/lib/python3.7/dist-packages (from pandas<1.5.0,>=0.24.2->ibm_watson_machine_learning) (1.21.6)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.7/dist-packages (from python-dateutil<3.0.0,>=2.1->ibm-cos-sdk-core==2.7.0->ibm-cos-sdk==2.7.*->ibm_watson_machine_learning) (1.15.0)\n",
+            "Requirement already satisfied: charset-normalizer<3,>=2 in /usr/local/lib/python3.7/dist-packages (from requests->ibm_watson_machine_learning) (2.1.1)\n",
+            "Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.7/dist-packages (from requests->ibm_watson_machine_learning) (2.10)\n",
+            "Requirement already satisfied: typing-extensions>=3.6.4 in /usr/local/lib/python3.7/dist-packages (from importlib-metadata->ibm_watson_machine_learning) (4.1.1)\n",
+            "Requirement already satisfied: zipp>=0.5 in /usr/local/lib/python3.7/dist-packages (from importlib-metadata->ibm_watson_machine_learning) (3.10.0)\n",
+            "Requirement already satisfied: pyparsing!=3.0.5,>=2.0.2 in /usr/local/lib/python3.7/dist-packages (from packaging->ibm_watson_machine_learning) (3.0.9)\n",
+            "Building wheels for collected packages: ibm-cos-sdk, ibm-cos-sdk-core, ibm-cos-sdk-s3transfer\n",
+            "  Building wheel for ibm-cos-sdk (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for ibm-cos-sdk: filename=ibm_cos_sdk-2.7.0-py2.py3-none-any.whl size=72564 sha256=3d71165c3675fb72f7213e8f64126d0564d8fa9d59d6a000083cba40888ebea6\n",
+            "  Stored in directory: /root/.cache/pip/wheels/47/22/bf/e1154ff0f5de93cc477acd0ca69abfbb8b799c5b28a66b44c2\n",
+            "  Building wheel for ibm-cos-sdk-core (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for ibm-cos-sdk-core: filename=ibm_cos_sdk_core-2.7.0-py2.py3-none-any.whl size=501011 sha256=8d07c6e5acf1f2c49166e27f293c40528aafdca2c20484132303658e283106f4\n",
+            "  Stored in directory: /root/.cache/pip/wheels/6c/a2/e4/c16d02f809a3ea998e17cfd02c13369281f3d232aaf5902c19\n",
+            "  Building wheel for ibm-cos-sdk-s3transfer (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for ibm-cos-sdk-s3transfer: filename=ibm_cos_sdk_s3transfer-2.7.0-py2.py3-none-any.whl size=88619 sha256=1e5164b360571c312004ed44a368534675e4005f90f8b995f40b5c04aeb7fa21\n",
+            "  Stored in directory: /root/.cache/pip/wheels/5f/b7/14/fbe02bc1ef1af890650c7e51743d1c83890852e598d164b9da\n",
+            "Successfully built ibm-cos-sdk ibm-cos-sdk-core ibm-cos-sdk-s3transfer\n",
+            "Installing collected packages: docutils, ibm-cos-sdk-core, ibm-cos-sdk-s3transfer, ibm-cos-sdk, ibm-watson-machine-learning\n",
+            "  Attempting uninstall: docutils\n",
+            "    Found existing installation: docutils 0.17.1\n",
+            "    Uninstalling docutils-0.17.1:\n",
+            "      Successfully uninstalled docutils-0.17.1\n",
+            "  Attempting uninstall: ibm-cos-sdk-core\n",
+            "    Found existing installation: ibm-cos-sdk-core 2.12.0\n",
+            "    Uninstalling ibm-cos-sdk-core-2.12.0:\n",
+            "      Successfully uninstalled ibm-cos-sdk-core-2.12.0\n",
+            "  Attempting uninstall: ibm-cos-sdk-s3transfer\n",
+            "    Found existing installation: ibm-cos-sdk-s3transfer 2.12.0\n",
+            "    Uninstalling ibm-cos-sdk-s3transfer-2.12.0:\n",
+            "      Successfully uninstalled ibm-cos-sdk-s3transfer-2.12.0\n",
+            "  Attempting uninstall: ibm-cos-sdk\n",
+            "    Found existing installation: ibm-cos-sdk 2.12.0\n",
+            "    Uninstalling ibm-cos-sdk-2.12.0:\n",
+            "      Successfully uninstalled ibm-cos-sdk-2.12.0\n",
+            "Successfully installed docutils-0.15.2 ibm-cos-sdk-2.7.0 ibm-cos-sdk-core-2.7.0 ibm-cos-sdk-s3transfer-2.7.0 ibm-watson-machine-learning-1.0.257\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from ibm_watson_machine_learning import APIClient\n",
+        "\n",
+        "wml_credentials ={\n",
+        "    \"url\":\"https://eu-gb.ml.cloud.ibm.com\",\n",
+        "    \"apikey\":\"svC-EUm9-gSj4fy_tJwXdb-AsdXf-8GPIOt_DG2na3B4\"\n",
+        "}\n",
+        "\n",
+        "client = APIClient(wml_credentials)\n",
+        "client"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "n2iC-ZQM5zRh",
+        "outputId": "ae4255e7-cb8b-4e0e-e686-35f58adc31f9"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Python 3.7 and 3.8 frameworks are deprecated and will be removed in a future release. Use Python 3.9 framework instead.\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "<ibm_watson_machine_learning.client.APIClient at 0x7faec3aaf290>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 17
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "client.spaces.get_details()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "RWxB8SD79UtE",
+        "outputId": "1c455057-01f7-4291-81c6-a913b4cdf9af"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "{'resources': [{'entity': {'compute': [{'crn': 'crn:v1:bluemix:public:pm-20:eu-gb:a/1b4158453a4e40e4b5e452cc930d8653:8b30ac71-a0a5-47ed-ba84-53eafca26d14::',\n",
+              "      'guid': '8b30ac71-a0a5-47ed-ba84-53eafca26d14',\n",
+              "      'name': 'Watson Machine Learning-u5',\n",
+              "      'type': 'machine_learning'}],\n",
+              "    'description': '',\n",
+              "    'name': 'M_deploy',\n",
+              "    'scope': {'bss_account_id': '1b4158453a4e40e4b5e452cc930d8653'},\n",
+              "    'stage': {'production': False},\n",
+              "    'status': {'state': 'active'},\n",
+              "    'storage': {'properties': {'bucket_name': '001ca5ec-7f2c-479b-8f96-de531248df78',\n",
+              "      'bucket_region': 'eu-gb-standard',\n",
+              "      'credentials': {'admin': {'access_key_id': 'e24101ccd12d471581773d49aac0ef49',\n",
+              "        'api_key': 'di__di7i9nWPVbomITQBdN_6Pad7-U2xHSLRkU1xzo4z',\n",
+              "        'secret_access_key': '16390a632088a029b23904ace89b27540744523250705774',\n",
+              "        'service_id': 'ServiceId-fefb3fd4-f0b3-4f99-acb0-e273e9c91726'},\n",
+              "       'editor': {'access_key_id': '0fe04e1d86ef46589edec6f6a2421041',\n",
+              "        'api_key': 'TRmrgHp8z_2U34QZD3tLliLnY679NET1rOjpGp131yyg',\n",
+              "        'resource_key_crn': 'crn:v1:bluemix:public:cloud-object-storage:global:a/1b4158453a4e40e4b5e452cc930d8653:0db9e5f9-54e5-4ca0-a0ef-97c27fc10b6d::',\n",
+              "        'secret_access_key': '907ed83583e419ccd5238fe808dbc12105257597fa2189a4',\n",
+              "        'service_id': 'ServiceId-75c941ff-f07b-4117-b4f0-528364e6f637'},\n",
+              "       'viewer': {'access_key_id': 'ab7fbed2e6ba43e4af30a173b62c1c54',\n",
+              "        'api_key': 'nVNLMhSof2JQU11erswLlg5S5z2jM8xqSkLSX92__KUA',\n",
+              "        'resource_key_crn': 'crn:v1:bluemix:public:cloud-object-storage:global:a/1b4158453a4e40e4b5e452cc930d8653:0db9e5f9-54e5-4ca0-a0ef-97c27fc10b6d::',\n",
+              "        'secret_access_key': 'eb22096cd05ff987b2a043ecce4af877741d928a09570c37',\n",
+              "        'service_id': 'ServiceId-6b5ba2b5-31d4-4a54-900e-7cf2dd7800d0'}},\n",
+              "      'endpoint_url': 'https://s3.eu-gb.cloud-object-storage.appdomain.cloud',\n",
+              "      'guid': '0db9e5f9-54e5-4ca0-a0ef-97c27fc10b6d',\n",
+              "      'resource_crn': 'crn:v1:bluemix:public:cloud-object-storage:global:a/1b4158453a4e40e4b5e452cc930d8653:0db9e5f9-54e5-4ca0-a0ef-97c27fc10b6d::'},\n",
+              "     'type': 'bmcos_object_storage'}},\n",
+              "   'metadata': {'created_at': '2022-11-08T13:00:02.705Z',\n",
+              "    'creator_id': 'IBMid-662003YT1F',\n",
+              "    'id': '32e4c41f-866e-49bf-a8d1-48bfbfb34b21',\n",
+              "    'updated_at': '2022-11-10T05:39:10.501Z',\n",
+              "    'url': '/v2/spaces/32e4c41f-866e-49bf-a8d1-48bfbfb34b21'}}]}"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 23
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def guid_space_name(client,M_deploy):\n",
+        "  space = client.spaces.get_details()\n",
+        "  return(next(item for item in space['resources'] if item['entity']['name']==M_deploy)['metadata']['id'])"
+      ],
+      "metadata": {
+        "id": "nPtVMDkS_lCS"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "space_uid = guid_space_name(client,'M_deploy')\n",
+        "space_uid"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 36
+        },
+        "id": "sLqR1gu1Avnr",
+        "outputId": "5a73e268-45ca-4ffd-a99d-171d437f0c6e"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'32e4c41f-866e-49bf-a8d1-48bfbfb34b21'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 26
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "client.set.default_space(space_uid)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 36
+        },
+        "id": "970-bMnoEIiM",
+        "outputId": "5fe12f93-918c-4877-adf5-cdb3d1da8336"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'SUCCESS'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 27
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "client.software_specifications.list()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "dTdkmFNpEUom",
+        "outputId": "ecdc8639-4f6a-4960-a07e-73dd85eee0e6"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "-----------------------------  ------------------------------------  ----\n",
+            "NAME                           ASSET_ID                              TYPE\n",
+            "default_py3.6                  0062b8c9-8b7d-44a0-a9b9-46c416adcbd9  base\n",
+            "kernel-spark3.2-scala2.12      020d69ce-7ac1-5e68-ac1a-31189867356a  base\n",
+            "pytorch-onnx_1.3-py3.7-edt     069ea134-3346-5748-b513-49120e15d288  base\n",
+            "scikit-learn_0.20-py3.6        09c5a1d0-9c1e-4473-a344-eb7b665ff687  base\n",
+            "spark-mllib_3.0-scala_2.12     09f4cff0-90a7-5899-b9ed-1ef348aebdee  base\n",
+            "pytorch-onnx_rt22.1-py3.9      0b848dd4-e681-5599-be41-b5f6fccc6471  base\n",
+            "ai-function_0.1-py3.6          0cdb0f1e-5376-4f4d-92dd-da3b69aa9bda  base\n",
+            "shiny-r3.6                     0e6e79df-875e-4f24-8ae9-62dcc2148306  base\n",
+            "tensorflow_2.4-py3.7-horovod   1092590a-307d-563d-9b62-4eb7d64b3f22  base\n",
+            "pytorch_1.1-py3.6              10ac12d6-6b30-4ccd-8392-3e922c096a92  base\n",
+            "tensorflow_1.15-py3.6-ddl      111e41b3-de2d-5422-a4d6-bf776828c4b7  base\n",
+            "runtime-22.1-py3.9             12b83a17-24d8-5082-900f-0ab31fbfd3cb  base\n",
+            "scikit-learn_0.22-py3.6        154010fa-5b3b-4ac1-82af-4d5ee5abbc85  base\n",
+            "default_r3.6                   1b70aec3-ab34-4b87-8aa0-a4a3c8296a36  base\n",
+            "pytorch-onnx_1.3-py3.6         1bc6029a-cc97-56da-b8e0-39c3880dbbe7  base\n",
+            "kernel-spark3.3-r3.6           1c9e5454-f216-59dd-a20e-474a5cdf5988  base\n",
+            "pytorch-onnx_rt22.1-py3.9-edt  1d362186-7ad5-5b59-8b6c-9d0880bde37f  base\n",
+            "tensorflow_2.1-py3.6           1eb25b84-d6ed-5dde-b6a5-3fbdf1665666  base\n",
+            "spark-mllib_3.2                20047f72-0a98-58c7-9ff5-a77b012eb8f5  base\n",
+            "tensorflow_2.4-py3.8-horovod   217c16f6-178f-56bf-824a-b19f20564c49  base\n",
+            "runtime-22.1-py3.9-cuda        26215f05-08c3-5a41-a1b0-da66306ce658  base\n",
+            "do_py3.8                       295addb5-9ef9-547e-9bf4-92ae3563e720  base\n",
+            "autoai-ts_3.8-py3.8            2aa0c932-798f-5ae9-abd6-15e0c2402fb5  base\n",
+            "tensorflow_1.15-py3.6          2b73a275-7cbf-420b-a912-eae7f436e0bc  base\n",
+            "kernel-spark3.3-py3.9          2b7961e2-e3b1-5a8c-a491-482c8368839a  base\n",
+            "pytorch_1.2-py3.6              2c8ef57d-2687-4b7d-acce-01f94976dac1  base\n",
+            "spark-mllib_2.3                2e51f700-bca0-4b0d-88dc-5c6791338875  base\n",
+            "pytorch-onnx_1.1-py3.6-edt     32983cea-3f32-4400-8965-dde874a8d67e  base\n",
+            "spark-mllib_3.0-py37           36507ebe-8770-55ba-ab2a-eafe787600e9  base\n",
+            "spark-mllib_2.4                390d21f8-e58b-4fac-9c55-d7ceda621326  base\n",
+            "xgboost_0.82-py3.6             39e31acd-5f30-41dc-ae44-60233c80306e  base\n",
+            "pytorch-onnx_1.2-py3.6-edt     40589d0e-7019-4e28-8daa-fb03b6f4fe12  base\n",
+            "default_r36py38                41c247d3-45f8-5a71-b065-8580229facf0  base\n",
+            "autoai-ts_rt22.1-py3.9         4269d26e-07ba-5d40-8f66-2d495b0c71f7  base\n",
+            "autoai-obm_3.0                 42b92e18-d9ab-567f-988a-4240ba1ed5f7  base\n",
+            "pmml-3.0_4.3                   493bcb95-16f1-5bc5-bee8-81b8af80e9c7  base\n",
+            "spark-mllib_2.4-r_3.6          49403dff-92e9-4c87-a3d7-a42d0021c095  base\n",
+            "xgboost_0.90-py3.6             4ff8d6c2-1343-4c18-85e1-689c965304d3  base\n",
+            "pytorch-onnx_1.1-py3.6         50f95b2a-bc16-43bb-bc94-b0bed208c60b  base\n",
+            "autoai-ts_3.9-py3.8            52c57136-80fa-572e-8728-a5e7cbb42cde  base\n",
+            "spark-mllib_2.4-scala_2.11     55a70f99-7320-4be5-9fb9-9edb5a443af5  base\n",
+            "spark-mllib_3.0                5c1b0ca2-4977-5c2e-9439-ffd44ea8ffe9  base\n",
+            "autoai-obm_2.0                 5c2e37fa-80b8-5e77-840f-d912469614ee  base\n",
+            "spss-modeler_18.1              5c3cad7e-507f-4b2a-a9a3-ab53a21dee8b  base\n",
+            "cuda-py3.8                     5d3232bf-c86b-5df4-a2cd-7bb870a1cd4e  base\n",
+            "autoai-kb_3.1-py3.7            632d4b22-10aa-5180-88f0-f52dfb6444d7  base\n",
+            "pytorch-onnx_1.7-py3.8         634d3cdc-b562-5bf9-a2d4-ea90a478456b  base\n",
+            "spark-mllib_2.3-r_3.6          6586b9e3-ccd6-4f92-900f-0f8cb2bd6f0c  base\n",
+            "tensorflow_2.4-py3.7           65e171d7-72d1-55d9-8ebb-f813d620c9bb  base\n",
+            "spss-modeler_18.2              687eddc9-028a-4117-b9dd-e57b36f1efa5  base\n",
+            "-----------------------------  ------------------------------------  ----\n",
+            "Note: Only first 50 records were displayed. To display more use 'limit' parameter.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "software_space_uid = client.software_specifications.get_uid_by_name('tensorflow_rt22.1-py3.9')\n",
+        "software_space_uid"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 36
+        },
+        "id": "F5_qyEbGE1lP",
+        "outputId": "e496b80a-7063-45d3-a899-7964c4a7debd"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'acd9c798-6974-5d2f-a657-ce06e986df4d'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 29
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model_details = client.repository.store_model(model='disaster-classification.tgz',meta_props={\n",
+        "    client.repository.ModelMetaNames.NAME:\"Disaster Model\",\n",
+        "    client.repository.ModelMetaNames.TYPE:\"tensorflow_2.7\",\n",
+        "    client.repository.ModelMetaNames.SOFTWARE_SPEC_UID:software_space_uid\n",
+        "})"
+      ],
+      "metadata": {
+        "id": "Ylaf8-RhFR_h"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model_details"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "uAllK72_Gv97",
+        "outputId": "a68bebb6-1c95-43ac-f2c0-74a8315493a2"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "{'entity': {'hybrid_pipeline_software_specs': [],\n",
+              "  'software_spec': {'id': 'acd9c798-6974-5d2f-a657-ce06e986df4d',\n",
+              "   'name': 'tensorflow_rt22.1-py3.9'},\n",
+              "  'type': 'tensorflow_2.7'},\n",
+              " 'metadata': {'created_at': '2022-11-10T05:54:45.584Z',\n",
+              "  'id': '21c7066c-fa0e-4621-b4cb-623ef40335b1',\n",
+              "  'modified_at': '2022-11-10T05:54:48.763Z',\n",
+              "  'name': 'Disaster Model',\n",
+              "  'owner': 'IBMid-662003YT1F',\n",
+              "  'resource_key': 'af2a202e-f97d-432c-8bdf-57d98d1265b4',\n",
+              "  'space_id': '32e4c41f-866e-49bf-a8d1-48bfbfb34b21'},\n",
+              " 'system': {'warnings': []}}"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 31
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model_id = client.repository.get_model_id(model_details)\n",
+        "model_id"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 36
+        },
+        "id": "dpY_qnzRG0tD",
+        "outputId": "2d935511-9876-4f83-871d-6b2d02850aca"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'21c7066c-fa0e-4621-b4cb-623ef40335b1'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 32
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "client.repository.download(model_id,'Disaster_IBM_model.tar.gb')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 53
+        },
+        "id": "0EomvNXPHFLp",
+        "outputId": "c95c9a2d-634f-443b-c2e2-fc13a58185ca"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Successfully saved model content to file: 'Disaster_IBM_model.tar.gb'\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "'/content/Disaster_IBM_model.tar.gb'"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "string"
+            }
+          },
+          "metadata": {},
+          "execution_count": 33
+        }
+      ]
+    }
+  ]
+}
